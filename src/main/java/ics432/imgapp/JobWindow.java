@@ -34,6 +34,7 @@ class JobWindow extends Stage {
     private final TextField targetDirTextField;
     private final Button runButton;
     private final Button closeButton;
+    private final Label timeLabel;
     private final ComboBox<String> imgTransformList;
 
     /**
@@ -152,6 +153,9 @@ class JobWindow extends Stage {
 
         layout.getChildren().add(flwvp);
 
+        timeLabel = new Label("");
+        layout.getChildren().add(timeLabel);
+
         HBox row3 = new HBox(5);
         row3.getChildren().add(runButton);
         row3.getChildren().add(closeButton);
@@ -225,5 +229,9 @@ class JobWindow extends Stage {
 
         // Update the viewport
         this.flwvp.addFiles(toAddToDisplay);
+        this.timeLabel.setText("Total time: " + job.getTotalTime() + " ms" + " " +
+                                "Read time: " + job.getReadTime() + "ms" + " " +
+                                "Write time: " + job.getWriteTime() + "ms" + " " +
+                                "Process time: " + job.getProcessTime() + "ms" + " ");
     }
 }

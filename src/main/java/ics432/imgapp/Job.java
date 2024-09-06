@@ -36,6 +36,11 @@ class Job {
     // The list of outcomes for each input file
     private final List<ImgTransformOutcome> outcomes;
 
+    private long readTime;
+    private long writeTime;
+    private long processTime;
+    private long totalTime;
+
     /**
      * Constructor
      *
@@ -60,6 +65,7 @@ class Job {
     void execute() {
 
         // Go through each input file and process it
+        long startTime = System.currentTimeMillis();
         for (Path inputFile : inputFiles) {
 
             System.err.println("Applying " + this.filterName + " to " + inputFile.toAbsolutePath() + " ...");
@@ -75,7 +81,8 @@ class Job {
             }
 
         }
-
+        long endTime = System.currentTimeMillis();
+        totalTime = endTime - startTime;
     }
 
     /**
@@ -89,6 +96,42 @@ class Job {
     }
 
     /**
+     * Getter for total time
+     *
+     * @return The total time it took to execute the job
+     */
+    public long getTotalTime() {
+        return this.totalTime;
+    }
+
+    /**
+     * Getter for read time
+     *
+     * @return The total time it took to read the images
+     */
+    public long getReadTime() {
+        return this.readTime;
+    }
+
+    /**
+     * Getter for write time
+     *
+     * @return the total time it took to read the images
+     */
+    public long getWriteTime() {
+        return this.writeTime;
+    }
+
+    /**
+     * Getter for processing time
+     *
+     * @return the total time it took to read the images
+     */
+    public long getProcessTime() {
+        return this.processTime;
+    }
+
+    /**
      * Helper method to apply a imgTransform to an input image file
      *
      * @param inputFile The input file path
@@ -98,6 +141,7 @@ class Job {
 
         // Load the image from file
         Image image;
+        long startTime = System.currentTimeMillis();
         try {
             image = new Image(inputFile.toUri().toURL().toString());
             if (image.isError()) {
@@ -107,14 +151,20 @@ class Job {
         } catch (IOException e) {
             throw new IOException("Error while reading from " + inputFile.toAbsolutePath());
         }
+        long endTime = System.currentTimeMillis();
+        readTime += endTime - startTime;
 
         // Create the filter
         BufferedImageOp filter = createFilter(filterName);
 
         // Process the image
+        startTime = System.currentTimeMillis();
         BufferedImage img = filter.filter(SwingFXUtils.fromFXImage(image, null), null);
+        endTime = System.currentTimeMillis();
+        processTime += endTime - startTime;
 
         // Write the image back to a file
+        startTime = System.currentTimeMillis();
         String outputPath = this.targetDir + FileSystems.getDefault().getSeparator() + this.filterName + "_" + inputFile.getFileName();
         try {
             OutputStream os = new FileOutputStream(outputPath);
@@ -123,6 +173,8 @@ class Job {
         } catch (IOException | NullPointerException e) {
             throw new IOException("Error while writing to " + outputPath);
         }
+        endTime = System.currentTimeMillis();
+        writeTime += endTime - startTime;
 
         // Success!
         return Paths.get(outputPath);
