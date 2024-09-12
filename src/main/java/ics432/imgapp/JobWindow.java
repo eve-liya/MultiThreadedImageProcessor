@@ -35,8 +35,10 @@ class JobWindow extends Stage {
     private final TextField targetDirTextField;
     private final Button runButton;
     private final Button closeButton;
+    private final Button cancelButton;
     private final Label timeLabel;
     private final ComboBox<String> imgTransformList;
+    private volatile boolean shouldStop = false;
 
     /**
      * Constructor
@@ -115,6 +117,12 @@ class JobWindow extends Stage {
         this.closeButton.setId("closeButton");
         this.closeButton.setPrefHeight(buttonPreferredHeight);
 
+        // Create a "Cancel" button
+        this.cancelButton = new Button("Cancel");
+        this.cancelButton.setId("cancelButton");
+        this.cancelButton.setPrefHeight(buttonPreferredHeight);
+        this.cancelButton.setDisable(true);
+
         // Set actions for all widgets
         this.changeDirButton.setOnAction(e -> {
             DirectoryChooser dirChooser = new DirectoryChooser();
@@ -133,6 +141,10 @@ class JobWindow extends Stage {
         });
 
         this.closeButton.setOnAction(f -> this.close());
+
+        this.cancelButton.setOnAction(f -> {
+            shouldStop = true;
+        });
 
         // Build the scene
         VBox layout = new VBox(5);
@@ -158,6 +170,7 @@ class JobWindow extends Stage {
         HBox row3 = new HBox(5);
         row3.getChildren().add(runButton);
         row3.getChildren().add(closeButton);
+        row3.getChildren().add(cancelButton);
         layout.getChildren().add(row3);
 
         Scene scene = new Scene(layout, windowWidth, windowHeight);
@@ -199,6 +212,7 @@ class JobWindow extends Stage {
         // Clear the display
         this.flwvp.clear();
         this.closeButton.setDisable(true);
+        this.cancelButton.setDisable(false);
 
         // Execute it in a separate thread
         Thread imgProcessThread = new Thread(new Runnable() {
@@ -208,6 +222,9 @@ class JobWindow extends Stage {
                 Job job = new Job(filterName, targetDir, inputFiles);
                 // Go through each input file and process it
                 for (Path inputFile : inputFiles) {
+                    if (shouldStop) {
+                        break;
+                    }
                     Job.ImgTransformOutcome result = job.processNextImage(inputFile);
                     List<Path> toAddToDisplay = new ArrayList<>();
                     StringBuilder errorMessage = new StringBuilder();
@@ -233,11 +250,15 @@ class JobWindow extends Stage {
 
                 // Update with the times and re-enable the close button
                 Platform.runLater(() -> {
+                    if (!shouldStop)
                     timeLabel.setText("Total time: " + (endTime - startTime) + " ms" + " " +
                         "Read time: " + job.getReadTime() + "ms" + " " +
                         "Write time: " + job.getWriteTime() + "ms" + " " +
                         "Process time: " + job.getProcessTime() + "ms" + " ");
+                    else
+                        timeLabel.setText("CANCELED");
                     closeButton.setDisable(false);
+                    cancelButton.setDisable(true);
                 });
             }
         });
