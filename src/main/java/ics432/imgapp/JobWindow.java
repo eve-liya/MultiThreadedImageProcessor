@@ -1,5 +1,6 @@
 package ics432.imgapp;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.event.Event;
 import javafx.geometry.Pos;
@@ -123,14 +124,12 @@ class JobWindow extends Stage {
         });
 
         this.runButton.setOnAction(e -> {
-            this.closeButton.setDisable(true);
             this.changeDirButton.setDisable(true);
             this.runButton.setDisable(true);
             this.imgTransformList.setDisable(true);
 
             executeJob(imgTransformList.getSelectionModel().getSelectedItem());
 
-            this.closeButton.setDisable(false);
         });
 
         this.closeButton.setOnAction(f -> this.close());
@@ -199,39 +198,49 @@ class JobWindow extends Stage {
 
         // Clear the display
         this.flwvp.clear();
+        this.closeButton.setDisable(true);
 
-        // Create a job
-        Job job = new Job(filterName, this.targetDir, this.inputFiles);
+        // Execute it in a separate thread
+        Thread imgProcessThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long startTime = System.currentTimeMillis();
+                Job job = new Job(filterName, targetDir, inputFiles);
+                // Go through each input file and process it
+                for (Path inputFile : inputFiles) {
+                    Job.ImgTransformOutcome result = job.processNextImage(inputFile);
+                    List<Path> toAddToDisplay = new ArrayList<>();
+                    StringBuilder errorMessage = new StringBuilder();
 
-        // Execute it
-        job.execute();
+                    if (result.success) {
+                        toAddToDisplay.add(result.outputFile);
+                    } else {
+                        errorMessage.append(result.inputFile.toAbsolutePath()).append(": ").append(result.error.getMessage()).append("\n");
+                    }
+                    // Pop up error dialog if needed
+                    if (!errorMessage.toString().isEmpty()) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("ImgTransform Job Error");
+                            alert.setHeaderText(null);
+                            alert.setContentText(errorMessage.toString());
+                            alert.showAndWait();
+                        });
+                    }
+                    flwvp.addFiles(toAddToDisplay);
+                }
+                long endTime = System.currentTimeMillis();
 
-        // Process the outcome
-        List<Path> toAddToDisplay = new ArrayList<>();
-
-        StringBuilder errorMessage = new StringBuilder();
-        for (Job.ImgTransformOutcome o : job.getOutcomes()) {
-            if (o.success) {
-                toAddToDisplay.add(o.outputFile);
-            } else {
-                errorMessage.append(o.inputFile.toAbsolutePath()).append(": ").append(o.error.getMessage()).append("\n");
+                // Update with the times and re-enable the close button
+                Platform.runLater(() -> {
+                    timeLabel.setText("Total time: " + (endTime - startTime) + " ms" + " " +
+                        "Read time: " + job.getReadTime() + "ms" + " " +
+                        "Write time: " + job.getWriteTime() + "ms" + " " +
+                        "Process time: " + job.getProcessTime() + "ms" + " ");
+                    closeButton.setDisable(false);
+                });
             }
-        }
-
-        // Pop up error dialog if needed
-        if (!errorMessage.toString().isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("ImgTransform Job Error");
-            alert.setHeaderText(null);
-            alert.setContentText(errorMessage.toString());
-            alert.showAndWait();
-        }
-
-        // Update the viewport
-        this.flwvp.addFiles(toAddToDisplay);
-        this.timeLabel.setText("Total time: " + job.getTotalTime() + " ms" + " " +
-                                "Read time: " + job.getReadTime() + "ms" + " " +
-                                "Write time: " + job.getWriteTime() + "ms" + " " +
-                                "Process time: " + job.getProcessTime() + "ms" + " ");
+        });
+        imgProcessThread.start();
     }
 }

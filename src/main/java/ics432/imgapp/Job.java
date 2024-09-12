@@ -60,7 +60,7 @@ class Job {
     }
 
     /**
-     * Method to execute the imgTransform job
+     * Method to execute the imgTransform job on all files
      */
     void execute() {
 
@@ -83,6 +83,21 @@ class Job {
         }
         long endTime = System.currentTimeMillis();
         totalTime = endTime - startTime;
+    }
+
+    /**
+     * Method to process one image file
+     */
+    ImgTransformOutcome processNextImage(Path inputFile) {
+        System.err.println("Applying " + this.filterName + " to " + inputFile.toAbsolutePath() + " ...");
+        try {
+            Path outputFile = processInputFile(inputFile);
+            // Generate a "success" outcome
+            return new ImgTransformOutcome(true, inputFile, outputFile, null);
+        } catch (IOException e) {
+            // Generate a "failure" outcome
+            return new ImgTransformOutcome(false, inputFile, null, e);
+        }
     }
 
     /**
