@@ -14,6 +14,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.scene.control.ProgressBar;
+
 
 import java.io.File;
 import java.nio.file.Path;
@@ -38,6 +40,7 @@ class JobWindow extends Stage {
     private final Button cancelButton;
     private final Label timeLabel;
     private final ComboBox<String> imgTransformList;
+    private final ProgressBar progressBar;
     private volatile boolean shouldStop = false;
 
     /**
@@ -123,6 +126,12 @@ class JobWindow extends Stage {
         this.cancelButton.setPrefHeight(buttonPreferredHeight);
         this.cancelButton.setDisable(true);
 
+        this.progressBar = new ProgressBar();
+        this.progressBar.setId("progressBar");
+        this.progressBar.setPrefWidth(500);
+        this.progressBar.setProgress(0.0);
+        this.progressBar.setVisible(false);
+
         // Set actions for all widgets
         this.changeDirButton.setOnAction(e -> {
             DirectoryChooser dirChooser = new DirectoryChooser();
@@ -142,9 +151,7 @@ class JobWindow extends Stage {
 
         this.closeButton.setOnAction(f -> this.close());
 
-        this.cancelButton.setOnAction(f -> {
-            shouldStop = true;
-        });
+        this.cancelButton.setOnAction(f -> shouldStop = true);
 
         // Build the scene
         VBox layout = new VBox(5);
@@ -171,6 +178,7 @@ class JobWindow extends Stage {
         row3.getChildren().add(runButton);
         row3.getChildren().add(closeButton);
         row3.getChildren().add(cancelButton);
+        row3.getChildren().add(progressBar);
         layout.getChildren().add(row3);
 
         Scene scene = new Scene(layout, windowWidth, windowHeight);
@@ -213,6 +221,7 @@ class JobWindow extends Stage {
         this.flwvp.clear();
         this.closeButton.setDisable(true);
         this.cancelButton.setDisable(false);
+        this.progressBar.setVisible(true);
 
         // Execute it in a separate thread
         Thread imgProcessThread = new Thread(new Runnable() {
@@ -221,6 +230,7 @@ class JobWindow extends Stage {
                 long startTime = System.currentTimeMillis();
                 Job job = new Job(filterName, targetDir, inputFiles);
                 // Go through each input file and process it
+                int filesProcessed = 0;
                 for (Path inputFile : inputFiles) {
                     if (shouldStop) {
                         break;
@@ -231,6 +241,9 @@ class JobWindow extends Stage {
 
                     if (result.success) {
                         toAddToDisplay.add(result.outputFile);
+                        filesProcessed++;
+                        int finalFilesProcessed = filesProcessed;
+                        Platform.runLater(() -> progressBar.setProgress((double) finalFilesProcessed /  inputFiles.size()));
                     } else {
                         errorMessage.append(result.inputFile.toAbsolutePath()).append(": ").append(result.error.getMessage()).append("\n");
                     }
@@ -259,6 +272,7 @@ class JobWindow extends Stage {
                         timeLabel.setText("CANCELED");
                     closeButton.setDisable(false);
                     cancelButton.setDisable(true);
+                    progressBar.setVisible(false);
                 });
             }
         });
