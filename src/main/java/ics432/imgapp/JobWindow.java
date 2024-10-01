@@ -1,6 +1,5 @@
 package ics432.imgapp;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.event.Event;
 import javafx.geometry.Pos;
@@ -20,7 +19,6 @@ import javafx.scene.control.ProgressBar;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,18 +28,17 @@ import java.util.List;
 
 class JobWindow extends Stage {
 
-    private Path targetDir;
-    private final List<Path> inputFiles;
-    private final FileListWithViewPort flwvp;
-    private final Button changeDirButton;
-    private final TextField targetDirTextField;
-    private final Button runButton;
-    private final Button closeButton;
-    private final Button cancelButton;
-    private final Label timeLabel;
-    private final ComboBox<String> imgTransformList;
-    private final ProgressBar progressBar;
-    private volatile boolean shouldStop = false;
+    protected Path targetDir;
+    protected final List<Path> inputFiles;
+    protected final FileListWithViewPort flwvp;
+    protected final Button changeDirButton;
+    protected final TextField targetDirTextField;
+    protected final Button runButton;
+    protected final Button closeButton;
+    protected final Button cancelButton;
+    protected final Label timeLabel;
+    protected final ComboBox<String> imgTransformList;
+    protected final ProgressBar progressBar;
 
     /**
      * Constructor
@@ -151,8 +148,6 @@ class JobWindow extends Stage {
 
         this.closeButton.setOnAction(f -> this.close());
 
-        this.cancelButton.setOnAction(f -> shouldStop = true);
-
         // Build the scene
         VBox layout = new VBox(5);
 
@@ -222,60 +217,8 @@ class JobWindow extends Stage {
         this.closeButton.setDisable(true);
         this.cancelButton.setDisable(false);
         this.progressBar.setVisible(true);
-
-        // Execute it in a separate thread
-        Thread imgProcessThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                long startTime = System.currentTimeMillis();
-                Job job = new Job(filterName, targetDir, inputFiles);
-                // Go through each input file and process it
-                int filesProcessed = 0;
-                for (Path inputFile : inputFiles) {
-                    if (shouldStop) {
-                        break;
-                    }
-                    Job.ImgTransformOutcome result = job.processNextImage(inputFile);
-                    List<Path> toAddToDisplay = new ArrayList<>();
-                    StringBuilder errorMessage = new StringBuilder();
-
-                    if (result.success) {
-                        toAddToDisplay.add(result.outputFile);
-                        filesProcessed++;
-                        int finalFilesProcessed = filesProcessed;
-                        Platform.runLater(() -> progressBar.setProgress((double) finalFilesProcessed /  inputFiles.size()));
-                    } else {
-                        errorMessage.append(result.inputFile.toAbsolutePath()).append(": ").append(result.error.getMessage()).append("\n");
-                    }
-                    // Pop up error dialog if needed
-                    if (!errorMessage.toString().isEmpty()) {
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("ImgTransform Job Error");
-                            alert.setHeaderText(null);
-                            alert.setContentText(errorMessage.toString());
-                            alert.showAndWait();
-                        });
-                    }
-                    flwvp.addFiles(toAddToDisplay);
-                }
-                long endTime = System.currentTimeMillis();
-
-                // Update with the times and re-enable the close button
-                Platform.runLater(() -> {
-                    if (!shouldStop)
-                    timeLabel.setText("Total time: " + (endTime - startTime) + " ms" + " " +
-                        "Read time: " + job.getReadTime() + "ms" + " " +
-                        "Write time: " + job.getWriteTime() + "ms" + " " +
-                        "Process time: " + job.getProcessTime() + "ms" + " ");
-                    else
-                        timeLabel.setText("CANCELED");
-                    closeButton.setDisable(false);
-                    cancelButton.setDisable(true);
-                    progressBar.setVisible(false);
-                });
-            }
-        });
+        ImageProcessThread imgProcessThread = new ImageProcessThread(this, filterName);
         imgProcessThread.start();
+        this.cancelButton.setOnAction(f -> imgProcessThread.cancel());
     }
 }

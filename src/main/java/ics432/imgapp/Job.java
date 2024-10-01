@@ -39,7 +39,6 @@ class Job {
     private long readTime;
     private long writeTime;
     private long processTime;
-    private long totalTime;
 
     /**
      * Constructor
@@ -57,32 +56,6 @@ class Job {
         this.inputFiles = inputFiles;
 
         this.outcomes = new ArrayList<>();
-    }
-
-    /**
-     * Method to execute the imgTransform job on all files
-     */
-    void execute() {
-
-        // Go through each input file and process it
-        long startTime = System.currentTimeMillis();
-        for (Path inputFile : inputFiles) {
-
-            System.err.println("Applying " + this.filterName + " to " + inputFile.toAbsolutePath() + " ...");
-
-            Path outputFile;
-            try {
-                outputFile = processInputFile(inputFile);
-                // Generate a "success" outcome
-                this.outcomes.add(new ImgTransformOutcome(true, inputFile, outputFile, null));
-            } catch (IOException e) {
-                // Generate a "failure" outcome
-                this.outcomes.add(new ImgTransformOutcome(false, inputFile, null, e));
-            }
-
-        }
-        long endTime = System.currentTimeMillis();
-        totalTime = endTime - startTime;
     }
 
     /**
@@ -108,15 +81,6 @@ class Job {
      */
     List<ImgTransformOutcome> getOutcomes() {
         return this.outcomes;
-    }
-
-    /**
-     * Getter for total time
-     *
-     * @return The total time it took to execute the job
-     */
-    public long getTotalTime() {
-        return this.totalTime;
     }
 
     /**
