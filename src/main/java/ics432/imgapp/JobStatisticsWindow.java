@@ -8,11 +8,11 @@ import javafx.stage.Stage;
 import javafx.scene.control.Label;
 
 class JobStatisticsWindow extends Stage {
-    protected int totalJobs;
-    protected int totalImages;
-    protected FilterStatistics invertStatistics = new FilterStatistics("Invert");
-    protected FilterStatistics solarizeStatistics = new FilterStatistics("Solarize");
-    protected FilterStatistics oilStatistics = new FilterStatistics("Oil4");
+    private int totalJobs;
+    private int totalImages;
+    private final FilterStatistics invertStatistics = new FilterStatistics("Invert");
+    private final FilterStatistics solarizeStatistics = new FilterStatistics("Solarize");
+    private final FilterStatistics oilStatistics = new FilterStatistics("Oil4");
 
     protected Label totalJobsLabel;
     protected Label totalImagesLabel;
