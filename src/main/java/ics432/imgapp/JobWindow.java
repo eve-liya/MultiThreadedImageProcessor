@@ -39,6 +39,7 @@ class JobWindow extends Stage {
     protected final Label timeLabel;
     protected final ComboBox<String> imgTransformList;
     protected final ProgressBar progressBar;
+    protected final JobStatisticsWindow jobStatistics;
 
     /**
      * Constructor
@@ -50,7 +51,7 @@ class JobWindow extends Stage {
      * @param id           The id of the job
      * @param inputFiles   The batch of input image files
      */
-    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles) {
+    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, JobStatisticsWindow jobStatistics) {
 
         // The  preferred height of buttons
         double buttonPreferredHeight = 27.0;
@@ -59,6 +60,8 @@ class JobWindow extends Stage {
         targetDir = Paths.get(inputFiles.getFirst().getParent().toString()); // Same dir as input images
         this.inputFiles = inputFiles;
 
+        // Set up the job statistics
+        this.jobStatistics = jobStatistics;
 
         // Set up the window
         this.setX(X);

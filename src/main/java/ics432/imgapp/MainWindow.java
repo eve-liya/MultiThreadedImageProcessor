@@ -55,6 +55,9 @@ class MainWindow {
         quitButton = new Button("Quit");
         quitButton.setPrefHeight(buttonPreferredHeight);
 
+        Button displayStatisticsButton = new Button("Display Statistics");
+        displayStatisticsButton.setPrefHeight(buttonPreferredHeight);
+
         this.fileListWithViewPort = new FileListWithViewPort(
                 windowWidth * 0.98,
                 windowHeight - 3 * buttonPreferredHeight - 3 * 5,
@@ -63,6 +66,7 @@ class MainWindow {
         // Listen for the "nothing is selected" property of the widget
         // to disable the createJobButton dynamically
         this.fileListWithViewPort.addNoSelectionListener(createJobButton::setDisable);
+        JobStatisticsWindow statisticsWindow = new JobStatisticsWindow();
 
         // Set actions for all widgets
         addFilesButton.setOnAction(e -> addFiles(selectFilesWithChooser()));
@@ -70,7 +74,12 @@ class MainWindow {
         quitButton.setOnAction(e -> {
             // If the button is enabled, it's fine to quit
             this.primaryStage.close();
+            statisticsWindow.close();
+        });
 
+        displayStatisticsButton.setOnAction(e -> {
+            statisticsWindow.show();
+            statisticsWindow.toFront();
         });
 
         createJobButton.setOnAction(e -> {
@@ -81,7 +90,7 @@ class MainWindow {
                     (int) (windowWidth * 0.8), (int) (windowHeight * 0.8),
                     this.primaryStage.getX() + 100 + this.pendingJobCount * 10,
                     this.primaryStage.getY() + 50 + this.pendingJobCount * 10,
-                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()));
+                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()), statisticsWindow);
 
             jw.addCloseListener(() -> {
                 this.pendingJobCount -= 1;
@@ -100,6 +109,7 @@ class MainWindow {
         HBox row = new HBox(5);
         row.getChildren().add(createJobButton);
         row.getChildren().add(quitButton);
+        row.getChildren().add(displayStatisticsButton);
         layout.getChildren().add(row);
 
         Scene scene = new Scene(layout, windowWidth, windowHeight);

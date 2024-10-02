@@ -55,9 +55,18 @@ public class ImageProcessThread extends Thread implements Runnable {
                 });
             }
             jobWindow.flwvp.addFiles(toAddToDisplay);
+            jobWindow.jobStatistics.incrementTotalImages();
         }
         long endTime = System.currentTimeMillis();
 
+        if (!shouldStop) {
+            long filesSize = 0;
+            for (Path inputFile : jobWindow.inputFiles) {
+                filesSize += inputFile.toFile().length();
+            }
+            jobWindow.jobStatistics.incrementTotalJobs();
+            jobWindow.jobStatistics.addFilterStatistic(filterName, (double) filesSize / 1000000, endTime - startTime);
+        }
         // Update with the times and re-enable the close button
         Platform.runLater(() -> {
             if (!shouldStop)
