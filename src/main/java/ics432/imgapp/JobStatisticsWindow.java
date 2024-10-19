@@ -7,32 +7,17 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.Label;
 
+import java.util.HashMap;
+
 class JobStatisticsWindow extends Stage {
     private int totalJobs;
     private int totalImages;
-    private final FilterStatistics invertStatistics = new FilterStatistics("Invert");
-    private final FilterStatistics solarizeStatistics = new FilterStatistics("Solarize");
-    private final FilterStatistics oilStatistics = new FilterStatistics("Oil4");
-
     protected Label totalJobsLabel;
     protected Label totalImagesLabel;
 
-    protected Label invertFileSizeLabel;
-    protected Label solarizeFileSizeLabel;
-    protected Label oilFileSizeLabel;
+    private final HashMap<String, FilterStatistics> filterStatsMap = new HashMap<>();
 
-    protected Label invertProcessTimeLabel;
-    protected Label solarizeProcessTimeLabel;
-    protected Label oilProcessTimeLabel;
-
-    protected Label invertAverageLabel;
-    protected Label solarizeAverageLabel;
-    protected Label oilAverageLabel;
-
-
-
-
-    JobStatisticsWindow() {
+    JobStatisticsWindow(String[] filters) {
         this.setTitle("Job Statistics");
         VBox layout = new VBox(5);
         HBox row1 = new HBox(5);
@@ -42,45 +27,34 @@ class JobStatisticsWindow extends Stage {
         row1.getChildren().add(totalImagesLabel);
         layout.getChildren().add(row1);
 
-        HBox row2 = new HBox(5);
-        invertFileSizeLabel = new Label("Invert: " + invertStatistics.totalFileSize + " MB");
-        row2.getChildren().add(invertFileSizeLabel);
-        solarizeFileSizeLabel = new Label("Solarize: " + solarizeStatistics.totalFileSize + " MB");
-        row2.getChildren().add(solarizeFileSizeLabel);
-        oilFileSizeLabel = new Label("Oil4: " + oilStatistics.totalFileSize + " MB");
-        row2.getChildren().add(oilFileSizeLabel);
-        layout.getChildren().add(row2);
-
-        HBox row3 = new HBox(5);
-        invertProcessTimeLabel = new Label("Invert: " + invertStatistics.totalProcessTime + " ms");
-        row3.getChildren().add(invertProcessTimeLabel);
-        solarizeProcessTimeLabel = new Label("Solarize: " + solarizeStatistics.totalProcessTime + " ms");
-        row3.getChildren().add(solarizeProcessTimeLabel);
-        oilProcessTimeLabel = new Label("Oil4: " + oilStatistics.totalProcessTime + " ms");
-        row3.getChildren().add(oilProcessTimeLabel);
-        layout.getChildren().add(row3);
-
-        HBox row4 = new HBox(5);
-        invertAverageLabel = new Label("Invert: " + 0 + " MB/ms");
-        row4.getChildren().add(invertAverageLabel);
-        solarizeAverageLabel = new Label("Solarize: " + 0 + " MB/ms");
-        row4.getChildren().add(solarizeAverageLabel);
-        oilAverageLabel = new Label("Oil4: " + 0 + " MB/ms");
-        row4.getChildren().add(oilAverageLabel);
-        layout.getChildren().add(row4);
+        for (String filter : filters) {
+            FilterStatistics tempStatistics = new FilterStatistics(filter);
+            HBox row = new HBox(5);
+            row.getChildren().add(tempStatistics.fileSizeLabel);
+            row.getChildren().add(tempStatistics.processTimeLabel);
+            row.getChildren().add(tempStatistics.averageLabel);
+            layout.getChildren().add(row);
+            filterStatsMap.put(filter, tempStatistics);
+        }
 
         this.setScene(new Scene(layout, 400, 200));
     }
 
-    class FilterStatistics {
+    static class FilterStatistics {
         protected double totalFileSize;
         protected long totalProcessTime;
+        protected Label fileSizeLabel;
+        protected Label processTimeLabel;
+        protected Label averageLabel;
         protected String filterName;
 
         public FilterStatistics(String filterName) {
             this.totalFileSize = 0;
             this.totalProcessTime = 0;
             this.filterName = filterName;
+            this.fileSizeLabel = new Label(filterName + ": " + totalFileSize + " MB");
+            this.processTimeLabel = new Label(filterName + ": " + totalProcessTime + " ms");
+            this.averageLabel = new Label(filterName + ": 0 MB/s");
         }
 
         public void addStatistics(double fileSize, long processTime) {
@@ -89,23 +63,9 @@ class JobStatisticsWindow extends Stage {
                 this.totalProcessTime += processTime;
             }
             Platform.runLater(() -> {
-                switch (filterName) {
-                    case "Invert":
-                        invertFileSizeLabel.setText(String.format("Invert: %.2f MB", totalFileSize));
-                        invertProcessTimeLabel.setText("Invert: " + totalProcessTime + " ms");
-                        invertAverageLabel.setText(String.format("Invert: %.2f MB/s", totalFileSize / (totalProcessTime / 1000.0)));
-                        break;
-                    case "Solarize":
-                        solarizeFileSizeLabel.setText(String.format("Solarize: %.2f MB", totalFileSize));
-                        solarizeProcessTimeLabel.setText("Solarize: " + totalProcessTime + " ms");
-                        solarizeAverageLabel.setText(String.format("Solarize: %.2f MB/s", totalFileSize / (totalProcessTime / 1000.0)));
-                        break;
-                    case "Oil4":
-                        oilFileSizeLabel.setText(String.format("Oil4: %.2f MB", totalFileSize));
-                        oilProcessTimeLabel.setText("Oil4: " + totalProcessTime + " ms");
-                        oilAverageLabel.setText(String.format("Oil4: %.2f MB/s", totalFileSize / (totalProcessTime / 1000.0)));
-                        break;
-                }
+                fileSizeLabel.setText(String.format(filterName + ": %.2f MB", totalFileSize));
+                processTimeLabel.setText(filterName + ": " + totalProcessTime + " ms");
+                averageLabel.setText(String.format(filterName + ": %.2f MB/s", totalFileSize / (totalProcessTime / 1000.0)));
             });
         }
     }
@@ -125,16 +85,6 @@ class JobStatisticsWindow extends Stage {
     }
 
     public void addFilterStatistic(String filterName, double fileSize, long processTime) {
-        switch (filterName) {
-            case "Invert":
-                invertStatistics.addStatistics(fileSize, processTime);
-                break;
-            case "Solarize":
-                solarizeStatistics.addStatistics(fileSize, processTime);
-                break;
-            case "Oil4":
-                oilStatistics.addStatistics(fileSize, processTime);
-                break;
-        }
+        filterStatsMap.get(filterName).addStatistics(fileSize, processTime);
     }
 }

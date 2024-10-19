@@ -99,9 +99,7 @@ class JobWindow extends Stage {
         this.imgTransformList = new ComboBox<>();
         this.imgTransformList.setId("imgTransformList");  // For TestFX
         this.imgTransformList.setItems(FXCollections.observableArrayList(
-                "Invert",
-                "Solarize",
-                "Oil4"
+                filters
         ));
 
         this.imgTransformList.getSelectionModel().selectFirst();  //Chooses first imgTransform as default

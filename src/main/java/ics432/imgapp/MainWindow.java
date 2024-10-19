@@ -27,6 +27,7 @@ class MainWindow {
     private int pendingJobCount = 0;
     private final FileListWithViewPort fileListWithViewPort;
     private int jobID = 0;
+    private final String[] filters = {"Invert", "Solarize", "Oil4"};
 
     /**
      * Constructor
@@ -66,7 +67,7 @@ class MainWindow {
         // Listen for the "nothing is selected" property of the widget
         // to disable the createJobButton dynamically
         this.fileListWithViewPort.addNoSelectionListener(createJobButton::setDisable);
-        JobStatisticsWindow statisticsWindow = new JobStatisticsWindow();
+        JobStatisticsWindow statisticsWindow = new JobStatisticsWindow(filters);
 
         // Set actions for all widgets
         addFilesButton.setOnAction(e -> addFiles(selectFilesWithChooser()));
