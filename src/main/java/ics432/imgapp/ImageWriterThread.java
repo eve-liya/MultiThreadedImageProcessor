@@ -52,8 +52,6 @@ public class ImageWriterThread implements Runnable {
                 jobWindow.flwvp.addFiles(Collections.singletonList(Path.of(outputPath)));
                 jobWindow.progressBar.setProgress((double) finalImagesProcessed /  jobWindow.inputFiles.size());
             });
-            System.out.println(imageUnit.processTime);
-            System.out.println(imageUnit.fileSize);
             statisticsWindow.addFilterStatistic(imageUnit.filterName, imageUnit.fileSize, imageUnit.processTime + (endTime - startTime));
             statisticsWindow.incrementTotalImages();
             imageUnit = buffer.consume();

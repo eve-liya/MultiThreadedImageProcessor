@@ -19,7 +19,6 @@ import javafx.scene.control.ProgressBar;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
 import java.util.List;
 
 /**
@@ -41,6 +40,7 @@ class JobWindow extends Stage {
     protected final ComboBox<String> imgTransformList;
     protected final ProgressBar progressBar;
     protected final JobStatisticsWindow jobStatistics;
+    protected int numImagesRam;
 
     /**
      * Constructor
@@ -52,8 +52,8 @@ class JobWindow extends Stage {
      * @param id           The id of the job
      * @param inputFiles   The batch of input image files
      */
-    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, String[] filters, JobStatisticsWindow jobStatistics, boolean multiThread) {
-
+    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, String[] filters, JobStatisticsWindow jobStatistics, int numImagesRam, boolean multiThread) {
+        this.numImagesRam = numImagesRam;
         // The  preferred height of buttons
         double buttonPreferredHeight = 27.0;
 
@@ -221,7 +221,7 @@ class JobWindow extends Stage {
         this.closeButton.setDisable(true);
 //        this.cancelButton.setDisable(false);
         this.progressBar.setVisible(true);
-        Thread imgJobThread = new Thread(new ImageJobThread(this, filterName, targetDir, inputFiles, inputFiles.size()));
+        Thread imgJobThread = new Thread(new ImageJobThread(this, filterName, targetDir, inputFiles, numImagesRam));
         imgJobThread.start();
     }
 
