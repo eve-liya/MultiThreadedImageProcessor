@@ -7,13 +7,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ImageProcessThread extends Thread implements Runnable {
+public class SingleThread extends Thread implements Runnable {
 
     private volatile boolean shouldStop = false;
     private final JobWindow jobWindow;
     private final String filterName;
 
-    ImageProcessThread(JobWindow jobWindow, String filterName) {
+    SingleThread(JobWindow jobWindow, String filterName) {
         this.jobWindow = jobWindow;
         this.filterName = filterName;
     }

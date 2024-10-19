@@ -19,6 +19,7 @@ import javafx.scene.control.ProgressBar;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.List;
 
 /**
@@ -51,7 +52,7 @@ class JobWindow extends Stage {
      * @param id           The id of the job
      * @param inputFiles   The batch of input image files
      */
-    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, JobStatisticsWindow jobStatistics) {
+    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, String[] filters, JobStatisticsWindow jobStatistics, boolean multiThread) {
 
         // The  preferred height of buttons
         double buttonPreferredHeight = 27.0;
@@ -142,9 +143,11 @@ class JobWindow extends Stage {
             this.changeDirButton.setDisable(true);
             this.runButton.setDisable(true);
             this.imgTransformList.setDisable(true);
-
-            executeJob(imgTransformList.getSelectionModel().getSelectedItem());
-
+            if (multiThread) {
+                executeMultiThreadedJob(imgTransformList.getSelectionModel().getSelectedItem());
+            }    else {
+                executeJob(imgTransformList.getSelectionModel().getSelectedItem());
+            }
         });
 
         this.closeButton.setOnAction(f -> this.close());
@@ -211,15 +214,23 @@ class JobWindow extends Stage {
      *
      * @param filterName The name of the filter to apply to input images
      */
-    private void executeJob(String filterName) {
+    private void executeMultiThreadedJob(String filterName) {
 
         // Clear the display
         this.flwvp.clear();
         this.closeButton.setDisable(true);
-        this.cancelButton.setDisable(false);
+//        this.cancelButton.setDisable(false);
         this.progressBar.setVisible(true);
-        ImageProcessThread imgProcessThread = new ImageProcessThread(this, filterName);
+        Thread imgJobThread = new Thread(new ImageJobThread(this, filterName, targetDir, inputFiles, inputFiles.size()));
+        imgJobThread.start();
+    }
+
+    private void executeJob(String filterName) {
+        // Clear the display
+        this.flwvp.clear();
+        this.closeButton.setDisable(true);
+        this.progressBar.setVisible(true);
+        SingleThread imgProcessThread = new SingleThread(this, filterName);
         imgProcessThread.start();
-        this.cancelButton.setOnAction(f -> imgProcessThread.cancel());
     }
 }

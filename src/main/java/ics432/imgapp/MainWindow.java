@@ -59,6 +59,8 @@ class MainWindow {
         Button displayStatisticsButton = new Button("Display Statistics");
         displayStatisticsButton.setPrefHeight(buttonPreferredHeight);
 
+        this.enableMultiThreading = new CheckBox("Enable Multithreading");
+
         this.fileListWithViewPort = new FileListWithViewPort(
                 windowWidth * 0.98,
                 windowHeight - 3 * buttonPreferredHeight - 3 * 5,
@@ -91,8 +93,7 @@ class MainWindow {
                     (int) (windowWidth * 0.8), (int) (windowHeight * 0.8),
                     this.primaryStage.getX() + 100 + this.pendingJobCount * 10,
                     this.primaryStage.getY() + 50 + this.pendingJobCount * 10,
-                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()), statisticsWindow);
-
+                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()), filters, statisticsWindow, this.enableMultiThreading.isSelected());
             jw.addCloseListener(() -> {
                 this.pendingJobCount -= 1;
                 if (this.pendingJobCount == 0) {
@@ -111,6 +112,7 @@ class MainWindow {
         row.getChildren().add(createJobButton);
         row.getChildren().add(quitButton);
         row.getChildren().add(displayStatisticsButton);
+        row.getChildren().add(enableMultiThreading);
         layout.getChildren().add(row);
 
         Scene scene = new Scene(layout, windowWidth, windowHeight);

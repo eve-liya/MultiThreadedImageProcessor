@@ -164,7 +164,7 @@ class Job {
      *
      * @param filterName the filter's name
      */
-    private BufferedImageOp createFilter(String filterName) {
+    static BufferedImageOp createFilter(String filterName) {
         switch (filterName) {
             case "Invert":
                 return new InvertFilter();
