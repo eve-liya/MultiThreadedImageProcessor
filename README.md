@@ -40,4 +40,6 @@ the reading, processing, and writing concurrently would improve the performance.
 to the reading and writing. This means that even though reading/writing can occur at the same time as the processing, we are bottlenecked
 and have to wait for the long process to finish before moving on to the next image.
 
+# Assignment 8
+The 3 threads are created in the Main Window class. They are created there and set to Daemon threads so the app can close even if they are still running. The producer consumer using the Array blocking queue is also set up in the MainWindow class. There are 3 buffers, one which starts the chain which the reader consumes from, one which the reader produces to and the processor consumes from, and one that the processor produces to and the writer consumes from. When a job is started, it will get a reference to the first input buffer and load all the files in there. Then the readers,processors, and writers can start. 
 
