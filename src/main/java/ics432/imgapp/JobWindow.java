@@ -52,8 +52,7 @@ class JobWindow extends Stage {
      * @param id           The id of the job
      * @param inputFiles   The batch of input image files
      */
-    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, String[] filters, JobStatisticsWindow jobStatistics, int numImagesRam, boolean multiThread) {
-        this.numImagesRam = numImagesRam;
+    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, String[] filters, JobStatisticsWindow jobStatistics) {
         // The  preferred height of buttons
         double buttonPreferredHeight = 27.0;
 
@@ -143,11 +142,7 @@ class JobWindow extends Stage {
             this.changeDirButton.setDisable(true);
             this.runButton.setDisable(true);
             this.imgTransformList.setDisable(true);
-            if (multiThread) {
-                executeMultiThreadedJob(imgTransformList.getSelectionModel().getSelectedItem());
-            }    else {
-                executeJob(imgTransformList.getSelectionModel().getSelectedItem());
-            }
+            executeMultiThreadedJob(imgTransformList.getSelectionModel().getSelectedItem());
         });
 
         this.closeButton.setOnAction(f -> this.close());
@@ -219,9 +214,8 @@ class JobWindow extends Stage {
         // Clear the display
         this.flwvp.clear();
         this.closeButton.setDisable(true);
-//        this.cancelButton.setDisable(false);
         this.progressBar.setVisible(true);
-        Thread imgJobThread = new Thread(new ImageJobThread(this, filterName, targetDir, inputFiles, numImagesRam));
+        Thread imgJobThread = new Thread(new ImageJobThread(this, filterName, targetDir, inputFiles));
         imgJobThread.start();
     }
 

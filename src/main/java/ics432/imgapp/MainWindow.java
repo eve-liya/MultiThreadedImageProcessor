@@ -3,9 +3,7 @@ package ics432.imgapp;
 import javafx.event.Event;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
+
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -28,7 +26,6 @@ class MainWindow {
     private final Stage primaryStage;
     private final Button quitButton;
     private int pendingJobCount = 0;
-    private final CheckBox enableMultiThreading;
     private final FileListWithViewPort fileListWithViewPort;
     private int jobID = 0;
     private final String[] filters = {"Invert", "Solarize", "Oil4"};
@@ -60,20 +57,8 @@ class MainWindow {
         quitButton = new Button("Quit");
         quitButton.setPrefHeight(buttonPreferredHeight);
 
-
-        Slider slider = new Slider(2, 40, 2);
-        slider.setShowTickMarks(true);
-        slider.setShowTickLabels(true);
-        slider.setMajorTickUnit(2);
-        slider.setMinorTickCount(0);
-        slider.snapToTicksProperty().set(true);
-        slider.setPrefWidth(windowWidth * .90);
-        slider.setBlockIncrement(1);
-
         Button displayStatisticsButton = new Button("Display Statistics");
         displayStatisticsButton.setPrefHeight(buttonPreferredHeight);
-
-        this.enableMultiThreading = new CheckBox("Enable Multithreading");
 
         this.fileListWithViewPort = new FileListWithViewPort(
                 windowWidth * 0.98,
@@ -107,7 +92,7 @@ class MainWindow {
                     (int) (windowWidth * 0.8), (int) (windowHeight * 0.8),
                     this.primaryStage.getX() + 100 + this.pendingJobCount * 10,
                     this.primaryStage.getY() + 50 + this.pendingJobCount * 10,
-                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()), filters, statisticsWindow, (int) slider.getValue(),this.enableMultiThreading.isSelected());
+                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()), filters, statisticsWindow);
             jw.addCloseListener(() -> {
                 this.pendingJobCount -= 1;
                 if (this.pendingJobCount == 0) {
@@ -126,14 +111,7 @@ class MainWindow {
         row.getChildren().add(createJobButton);
         row.getChildren().add(quitButton);
         row.getChildren().add(displayStatisticsButton);
-        row.getChildren().add(enableMultiThreading);
         layout.getChildren().add(row);
-
-        HBox row2 = new HBox(5);
-        row2.setPrefHeight(buttonPreferredHeight);
-        row2.getChildren().add(slider);
-        row2.getChildren().add(new Label(" #images in RAM"));
-        layout.getChildren().add(row2);
 
         Scene scene = new Scene(layout, windowWidth, windowHeight);
         this.primaryStage.setScene(scene);

@@ -10,17 +10,18 @@ import java.io.OutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import static javax.imageio.ImageIO.createImageOutputStream;
 
 public class ImageWriterThread implements Runnable {
     private final Path targetDir;
-    private final ProducerConsumerBuffer<ImageUnit> buffer;
+    private final ArrayBlockingQueue<ImageUnit> buffer;
     private final JobWindow jobWindow;
     private final ImageJobThread.timer timer;
     private final JobStatisticsWindow statisticsWindow;
 
-    ImageWriterThread(ProducerConsumerBuffer<ImageUnit> buffer, Path targetDir,
+    ImageWriterThread(ArrayBlockingQueue<ImageUnit> buffer, Path targetDir,
                       JobWindow jobWindow, ImageJobThread.timer timer, JobStatisticsWindow statisticsWindow) {
         this.buffer = buffer;
         this.targetDir = targetDir;
@@ -32,8 +33,11 @@ public class ImageWriterThread implements Runnable {
     @Override
     public void run() {
         int imagesProcessed = 0;
-        ImageUnit imageUnit = buffer.consume();
-        while (!imageUnit.last) {
+        ImageUnit imageUnit = null;
+        try {
+            imageUnit = buffer.take();
+        } catch (InterruptedException ignore) {}
+        while (imageUnit != null && !imageUnit.last) {
             long startTime = System.currentTimeMillis();
             long endTime;
             String outputPath = this.targetDir + FileSystems.getDefault().getSeparator() + imageUnit.filterName + "_" + imageUnit.inputFile.getFileName();
@@ -54,7 +58,9 @@ public class ImageWriterThread implements Runnable {
             });
             statisticsWindow.addFilterStatistic(imageUnit.filterName, imageUnit.fileSize, imageUnit.processTime + (endTime - startTime));
             statisticsWindow.incrementTotalImages();
-            imageUnit = buffer.consume();
+            try {
+                imageUnit = buffer.take();
+            } catch (InterruptedException ignore) {}
         }
     }
 }

@@ -1,6 +1,7 @@
 package ics432.imgapp;
 
 import javafx.application.Platform;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import java.awt.image.BufferedImageOp;
 import java.nio.file.Path;
@@ -28,12 +29,12 @@ public class ImageJobThread implements Runnable {
      * @param inputFiles The list of input file paths
      */
     ImageJobThread(JobWindow jobWindow,String filterName, Path targetDir,
-                   List<Path> inputFiles, int bufferSize) {
+                   List<Path> inputFiles) {
         this.filterName = filterName;
         this.targetDir = targetDir;
         this.inputFiles = inputFiles;
-        this.bufferSize = bufferSize;
         this.jobWindow = jobWindow;
+        this.bufferSize = 16;
         this.jobStatisticsWindow = jobWindow.jobStatistics;
         this.timer = new timer();
     }
@@ -42,12 +43,11 @@ public class ImageJobThread implements Runnable {
     public void run() {
         long startTime = System.currentTimeMillis();
         BufferedImageOp filter = Job.createFilter(filterName);
-
-        ProducerConsumerBuffer<ImageUnit> readBuffer = new ProducerConsumerBuffer<>(bufferSize);
+        ArrayBlockingQueue<ImageUnit> readBuffer = new ArrayBlockingQueue<>(bufferSize);
         Thread reader = new Thread(new ImageReaderThread(inputFiles, readBuffer, filterName, timer));
         reader.start();
 
-        ProducerConsumerBuffer<ImageUnit> writeBuffer = new ProducerConsumerBuffer<>(bufferSize);
+        ArrayBlockingQueue<ImageUnit> writeBuffer = new ArrayBlockingQueue<>(bufferSize);
         Thread processer = new Thread(new ImageProcesserThread(readBuffer, writeBuffer, filter, timer));
         processer.start();
 
