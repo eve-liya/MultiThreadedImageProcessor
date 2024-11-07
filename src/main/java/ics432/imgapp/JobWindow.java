@@ -17,9 +17,12 @@ import javafx.scene.control.ProgressBar;
 
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * A class that implements a "Job Window" on which a user
@@ -40,8 +43,18 @@ class JobWindow extends Stage {
     protected final ComboBox<String> imgTransformList;
     protected final ProgressBar progressBar;
     protected final JobStatisticsWindow jobStatistics;
-    protected int numImagesRam;
+    protected final ArrayBlockingQueue<ImageUnit> inputBuffer;
+    Timer timer;
+    static class Timer {
+        long startTime;
+        long readTime = 0;
+        long writeTime = 0;
+        long processTime = 0;
 
+        Timer() {
+            startTime = System.currentTimeMillis();
+        }
+    }
     /**
      * Constructor
      *
@@ -52,9 +65,11 @@ class JobWindow extends Stage {
      * @param id           The id of the job
      * @param inputFiles   The batch of input image files
      */
-    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, String[] filters, JobStatisticsWindow jobStatistics) {
+    JobWindow(int windowWidth, int windowHeight, double X, double Y, int id, List<Path> inputFiles, String[] filters, ArrayBlockingQueue<ImageUnit> inputBuffer, JobStatisticsWindow jobStatistics) {
         // The  preferred height of buttons
         double buttonPreferredHeight = 27.0;
+        this.inputBuffer = inputBuffer;
+        timer = new Timer();
 
         // Set up instance variables
         targetDir = Paths.get(inputFiles.getFirst().getParent().toString()); // Same dir as input images
@@ -210,13 +225,20 @@ class JobWindow extends Stage {
      * @param filterName The name of the filter to apply to input images
      */
     private void executeMultiThreadedJob(String filterName) {
-
         // Clear the display
         this.flwvp.clear();
         this.closeButton.setDisable(true);
         this.progressBar.setVisible(true);
-        Thread imgJobThread = new Thread(new ImageJobThread(this, filterName, targetDir, inputFiles));
-        imgJobThread.start();
+        for (Path inputFile : inputFiles) {
+            System.err.println("Inputted file " + inputFile + " to " + targetDir);
+            try {
+                inputBuffer.put(new ImageUnit(inputFile, targetDir,null, filterName, Files.size(inputFile) / 1048576.0,
+                        0, this,false));
+            } catch (IOException | InterruptedException ignore) {}
+        }
+        try {
+            inputBuffer.put(new ImageUnit(null, null, null, null, 0, 0, this, true));
+        } catch (InterruptedException ignore) {}
     }
 
     private void executeJob(String filterName) {

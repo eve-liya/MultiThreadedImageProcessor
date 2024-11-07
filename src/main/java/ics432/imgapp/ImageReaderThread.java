@@ -3,42 +3,43 @@ package ics432.imgapp;
 import javafx.scene.image.Image;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class ImageReaderThread implements Runnable {
 
-    private final List<Path> inputFiles;
-    private final ArrayBlockingQueue<ImageUnit> buffer;
-    private final String filterName;
-    private final ImageJobThread.timer timer;
+    private final ArrayBlockingQueue<ImageUnit> inputBuffer;
+    private final ArrayBlockingQueue<ImageUnit> processBuffer;
 
-    ImageReaderThread(List<Path> inputFiles, ArrayBlockingQueue<ImageUnit> buffer,
-                      String filterName, ImageJobThread.timer timer) {
-        this.inputFiles = inputFiles;
-        this.buffer = buffer;
-        this.filterName = filterName;
-        this.timer = timer;
+    ImageReaderThread(ArrayBlockingQueue<ImageUnit> inputBuffer, ArrayBlockingQueue<ImageUnit> buffer) {
+        this.inputBuffer = inputBuffer;
+        this.processBuffer = buffer;
     }
 
     @Override
     public void run() {
-        for (Path inputFile : inputFiles) {
+        ImageUnit imageUnit = null;
+        try {
+            imageUnit = inputBuffer.take();
+        } catch (InterruptedException ignore) {}
+        while (imageUnit != null) {
             try {
-                long startTime = System.currentTimeMillis();
-                Image image = new Image(inputFile.toUri().toURL().toString());
-                long endTime = System.currentTimeMillis();
-                timer.readTime += endTime - startTime;
-                buffer.offer(new ImageUnit(inputFile, image, filterName, Files.size(inputFile) / 1048576.0,
-                        endTime - startTime, false));
+                if (!imageUnit.last) {
+                    System.err.println("Reading " + imageUnit.inputFile);
+                    long startTime = System.currentTimeMillis();
+                    imageUnit.image = new Image(imageUnit.inputFile.toUri().toURL().toString());
+                    long endTime = System.currentTimeMillis();
+                    imageUnit.jobWindow.timer.readTime += endTime - startTime;
+                }
+                try {
+                    processBuffer.put(imageUnit);
+                } catch (InterruptedException ignore) {}
             } catch (IOException e) {
-                System.err.println("Error while reading from " + inputFile.toAbsolutePath() +
+                System.err.println("Error while reading from " + imageUnit.inputFile.toAbsolutePath() +
                         " (" + e.getMessage() + ")");
             }
+            try {
+                imageUnit = inputBuffer.take();
+            } catch (InterruptedException ignore) {}
         }
-        // poison pill
-        buffer.offer(new ImageUnit(null, null, null, 0,0, true));
     }
 }

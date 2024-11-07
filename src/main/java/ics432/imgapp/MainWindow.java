@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * A class that implements the "Main Window" for the app, which
@@ -29,6 +30,7 @@ class MainWindow {
     private final FileListWithViewPort fileListWithViewPort;
     private int jobID = 0;
     private final String[] filters = {"Invert", "Solarize", "Oil4"};
+    private int bufferSize = 16;
 
     /**
      * Constructor
@@ -73,6 +75,22 @@ class MainWindow {
         // Set actions for all widgets
         addFilesButton.setOnAction(e -> addFiles(selectFilesWithChooser()));
 
+        // Start the threads
+        ArrayBlockingQueue<ImageUnit> inputBuffer = new ArrayBlockingQueue<>(bufferSize);
+        ArrayBlockingQueue<ImageUnit> readBuffer = new ArrayBlockingQueue<>(bufferSize);
+        Thread reader = new Thread(new ImageReaderThread(inputBuffer, readBuffer));
+        reader.setDaemon(true);
+        reader.start();
+
+        ArrayBlockingQueue<ImageUnit> writeBuffer = new ArrayBlockingQueue<>(bufferSize);
+        Thread processor = new Thread(new ImageProcesserThread(readBuffer, writeBuffer));
+        processor.setDaemon(true);
+        processor.start();
+
+        Thread writer = new Thread(new ImageWriterThread(writeBuffer));
+        writer.setDaemon(true);
+        writer.start();
+
         quitButton.setOnAction(e -> {
             // If the button is enabled, it's fine to quit
             this.primaryStage.close();
@@ -92,7 +110,7 @@ class MainWindow {
                     (int) (windowWidth * 0.8), (int) (windowHeight * 0.8),
                     this.primaryStage.getX() + 100 + this.pendingJobCount * 10,
                     this.primaryStage.getY() + 50 + this.pendingJobCount * 10,
-                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()), filters, statisticsWindow);
+                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()), filters, inputBuffer, statisticsWindow);
             jw.addCloseListener(() -> {
                 this.pendingJobCount -= 1;
                 if (this.pendingJobCount == 0) {

@@ -11,56 +11,65 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static javax.imageio.ImageIO.createImageOutputStream;
 
 public class ImageWriterThread implements Runnable {
-    private final Path targetDir;
     private final ArrayBlockingQueue<ImageUnit> buffer;
-    private final JobWindow jobWindow;
-    private final ImageJobThread.timer timer;
-    private final JobStatisticsWindow statisticsWindow;
 
-    ImageWriterThread(ArrayBlockingQueue<ImageUnit> buffer, Path targetDir,
-                      JobWindow jobWindow, ImageJobThread.timer timer, JobStatisticsWindow statisticsWindow) {
+    ImageWriterThread(ArrayBlockingQueue<ImageUnit> buffer) {
         this.buffer = buffer;
-        this.targetDir = targetDir;
-        this.jobWindow = jobWindow;
-        this.timer = timer;
-        this.statisticsWindow = statisticsWindow;
     }
 
     @Override
     public void run() {
-        int imagesProcessed = 0;
+        AtomicInteger imagesProcessed = new AtomicInteger();
         ImageUnit imageUnit = null;
         try {
             imageUnit = buffer.take();
-        } catch (InterruptedException ignore) {}
-        while (imageUnit != null && !imageUnit.last) {
-            long startTime = System.currentTimeMillis();
-            long endTime;
-            String outputPath = this.targetDir + FileSystems.getDefault().getSeparator() + imageUnit.filterName + "_" + imageUnit.inputFile.getFileName();
-            try {
-                OutputStream os = new FileOutputStream(outputPath);
-                ImageOutputStream outputStream = createImageOutputStream(os);
-                ImageIO.write(imageUnit.filteredImage, "jpg", outputStream);
-                endTime = System.currentTimeMillis();
-                timer.writeTime += endTime - startTime;
-                imagesProcessed++;
-            } catch (IOException | NullPointerException e) {
-                throw new RuntimeException("Error while writing to " + outputPath);
+        } catch (InterruptedException ignore) {
+        }
+        while (imageUnit != null) {
+            final JobWindow finalJobWindow = imageUnit.jobWindow;
+            if (!imageUnit.last) {
+                System.err.println("writing " + imageUnit.inputFile + " to " + imageUnit.targetDir);
+                long startTime = System.currentTimeMillis();
+                long endTime;
+                String outputPath = imageUnit.targetDir + FileSystems.getDefault().getSeparator() + imageUnit.filterName + "_" + imageUnit.inputFile.getFileName();
+                try {
+                    OutputStream os = new FileOutputStream(outputPath);
+                    ImageOutputStream outputStream = createImageOutputStream(os);
+                    ImageIO.write(imageUnit.filteredImage, "jpg", outputStream);
+                    endTime = System.currentTimeMillis();
+                    imageUnit.jobWindow.timer.writeTime += endTime - startTime;
+                    imagesProcessed.getAndIncrement();
+                } catch (IOException | NullPointerException e) {
+                    throw new RuntimeException("Error while writing to " + outputPath);
+                }
+                int finalImagesProcessed = imagesProcessed.get();
+                Platform.runLater(() -> {
+                    finalJobWindow.flwvp.addFiles(Collections.singletonList(Path.of(outputPath)));
+                    finalJobWindow.progressBar.setProgress((double) finalImagesProcessed / finalJobWindow.inputFiles.size());
+                });
+                imageUnit.jobWindow.jobStatistics.addFilterStatistic(imageUnit.filterName, imageUnit.fileSize, imageUnit.processTime + (endTime - startTime));
+                imageUnit.jobWindow.jobStatistics.incrementTotalImages();
+            } else {
+                Platform.runLater(() -> {
+                    imagesProcessed.set(0);
+                    finalJobWindow.timeLabel.setText("Total time: " + (System.currentTimeMillis() - finalJobWindow.timer.startTime) + " ms" + " " +
+                            "Read time: " + finalJobWindow.timer.readTime + "ms" + " " +
+                            "Write time: " + finalJobWindow.timer.writeTime + "ms" + " " +
+                            "Process time: " + finalJobWindow.timer.processTime + "ms" + " ");
+                    finalJobWindow.closeButton.setDisable(false);
+                    finalJobWindow.progressBar.setVisible(false);
+                });
             }
-            int finalImagesProcessed = imagesProcessed;
-            Platform.runLater(() -> {
-                jobWindow.flwvp.addFiles(Collections.singletonList(Path.of(outputPath)));
-                jobWindow.progressBar.setProgress((double) finalImagesProcessed /  jobWindow.inputFiles.size());
-            });
-            statisticsWindow.addFilterStatistic(imageUnit.filterName, imageUnit.fileSize, imageUnit.processTime + (endTime - startTime));
-            statisticsWindow.incrementTotalImages();
+
             try {
                 imageUnit = buffer.take();
-            } catch (InterruptedException ignore) {}
+            } catch (InterruptedException ignore) {
+            }
         }
     }
 }
