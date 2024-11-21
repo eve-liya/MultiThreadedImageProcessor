@@ -1,5 +1,7 @@
 package ics432.imgapp;
 
+import javafx.geometry.Orientation;
+import javafx.scene.control.Separator;
 import javafx.scene.image.Image;
 
 import java.net.MalformedURLException;
@@ -42,5 +44,21 @@ class Util {
             return null;
         }
     }
+
+    /**
+     * Helper method to create  Separator objects
+     *
+     * @param preferredWidth  Preferred width
+     * @param preferredHeight Preferred  Height
+     * @param orientation     Orientation
+     * @return A new separator
+     */
+    static Separator createSeparator(double preferredWidth, double preferredHeight, Orientation orientation) {
+        Separator s = new Separator(orientation);
+        s.setPrefWidth(preferredWidth);
+        s.setPrefHeight(preferredHeight);
+        return s;
+    }
+
 
 }

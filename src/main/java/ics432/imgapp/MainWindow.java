@@ -1,21 +1,24 @@
 package ics432.imgapp;
 
 import javafx.event.Event;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * A class that implements the "Main Window" for the app, which
@@ -28,9 +31,11 @@ class MainWindow {
     private final Button quitButton;
     private int pendingJobCount = 0;
     private final FileListWithViewPort fileListWithViewPort;
+    private StatisticsWindow statisticsWindow;
     private int jobID = 0;
-    private final String[] filters = {"Invert", "Solarize", "Oil4"};
-    private int bufferSize = 16;
+    private final Slider threadsSlider;
+
+
 
     /**
      * Constructor
@@ -56,86 +61,104 @@ class MainWindow {
         createJobButton.setPrefHeight(buttonPreferredHeight);
         createJobButton.setDisable(true);
 
+        Button viewStatsButton = new Button("View Stats");
+        viewStatsButton.setPrefHeight(buttonPreferredHeight);
+
+        this.threadsSlider = new Slider(1, Runtime.getRuntime().availableProcessors(), 1);
+        this.threadsSlider.setPrefWidth(300);
+        this.threadsSlider.setBlockIncrement(1);
+        this.threadsSlider.setMajorTickUnit(1);
+        this.threadsSlider.setMinorTickCount(0);
+        this.threadsSlider.setShowTickLabels(true);
+        this.threadsSlider.setSnapToTicks(true);
+
         quitButton = new Button("Quit");
         quitButton.setPrefHeight(buttonPreferredHeight);
 
-        Button displayStatisticsButton = new Button("Display Statistics");
-        displayStatisticsButton.setPrefHeight(buttonPreferredHeight);
-
         this.fileListWithViewPort = new FileListWithViewPort(
-                windowWidth * 0.98,
-                windowHeight - 4 * buttonPreferredHeight - 3 * 5,
+                windowWidth  * 0.98,
+                windowHeight - 3 * buttonPreferredHeight - 3 * 5,
                 true);
 
         // Listen for the "nothing is selected" property of the widget
         // to disable the createJobButton dynamically
         this.fileListWithViewPort.addNoSelectionListener(createJobButton::setDisable);
-        JobStatisticsWindow statisticsWindow = new JobStatisticsWindow(filters);
 
         // Set actions for all widgets
         addFilesButton.setOnAction(e -> addFiles(selectFilesWithChooser()));
 
-        // Start the threads
-        ArrayBlockingQueue<ImageUnit> inputBuffer = new ArrayBlockingQueue<>(bufferSize);
-        ArrayBlockingQueue<ImageUnit> readBuffer = new ArrayBlockingQueue<>(bufferSize);
-        Thread reader = new Thread(new ImageReaderThread(inputBuffer, readBuffer));
-        reader.setDaemon(true);
-        reader.start();
-
-        ArrayBlockingQueue<ImageUnit> writeBuffer = new ArrayBlockingQueue<>(bufferSize);
-        Thread processor = new Thread(new ImageProcesserThread(readBuffer, writeBuffer));
-        processor.setDaemon(true);
-        processor.start();
-
-        Thread writer = new Thread(new ImageWriterThread(writeBuffer));
-        writer.setDaemon(true);
-        writer.start();
-
         quitButton.setOnAction(e -> {
             // If the button is enabled, it's fine to quit
             this.primaryStage.close();
-            statisticsWindow.close();
-        });
 
-        displayStatisticsButton.setOnAction(e -> {
-            statisticsWindow.show();
-            statisticsWindow.toFront();
         });
 
         createJobButton.setOnAction(e -> {
             this.quitButton.setDisable(true);
+            this.threadsSlider.setDisable(true);
             this.pendingJobCount += 1;
             this.jobID += 1;
             JobWindow jw = new JobWindow(
                     (int) (windowWidth * 0.8), (int) (windowHeight * 0.8),
                     this.primaryStage.getX() + 100 + this.pendingJobCount * 10,
                     this.primaryStage.getY() + 50 + this.pendingJobCount * 10,
-                    this.jobID, new ArrayList<>(this.fileListWithViewPort.getSelection()), filters, inputBuffer, statisticsWindow);
+                    this.jobID,
+                    new ArrayList<>(this.fileListWithViewPort.getSelection()));
+
             jw.addCloseListener(() -> {
                 this.pendingJobCount -= 1;
                 if (this.pendingJobCount == 0) {
                     this.quitButton.setDisable(false);
+                    this.threadsSlider.setDisable(false);
                 }
             });
+        });
+
+        this.threadsSlider.valueProperty().addListener((observableValue, oldvalue, newvalue) -> ProducerConsumer.setNumberProcessorThreads(newvalue.intValue()));
+
+
+        viewStatsButton.setOnAction(e -> {
+
+            viewStatsButton.setDisable(true);
+            this.statisticsWindow = new StatisticsWindow(
+                    350, 120,
+                    this.primaryStage.getX() + 100 + this.pendingJobCount * 10,
+                    this.primaryStage.getY() + 30 + this.pendingJobCount * 11);
+
+            this.statisticsWindow.addCloseListener(() -> viewStatsButton.setDisable(false));
         });
 
         //Construct the layout
         VBox layout = new VBox(5);
 
-        layout.getChildren().add(addFilesButton);
+        layout.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
+
+        HBox topRow = new HBox();
+
+        topRow.getChildren().add(addFilesButton);
+        topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
+        topRow.getChildren().add(viewStatsButton);
+        topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
+        topRow.getChildren().add(new Label("#threads"));
+        topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
+        topRow.getChildren().add(this.threadsSlider);
+        topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
+        layout.getChildren().add(topRow);
+
+        layout.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
+
         layout.getChildren().add(this.fileListWithViewPort);
 
         HBox row = new HBox(5);
         row.getChildren().add(createJobButton);
         row.getChildren().add(quitButton);
-        row.getChildren().add(displayStatisticsButton);
         layout.getChildren().add(row);
 
         Scene scene = new Scene(layout, windowWidth, windowHeight);
         this.primaryStage.setScene(scene);
         this.primaryStage.setResizable(false);
 
-        // Make this primaryStage non-closable
+        // Make this primaryStage non closable
         this.primaryStage.setOnCloseRequest(Event::consume);
 
         //  Show it on  screen.
@@ -154,7 +177,7 @@ class MainWindow {
         fileChooser.setTitle("Choose Image Files");
         fileChooser.getExtensionFilters().addAll(
                 new ExtensionFilter("Jpeg Image Files", "*.jpg", "*.jpeg", "*.JPG", "*.JPEG"));
-        List<File> selectedFiles = fileChooser.showOpenMultipleDialog(this.primaryStage);
+        List<File>  selectedFiles = fileChooser.showOpenMultipleDialog(this.primaryStage);
 
         if (selectedFiles == null) {
             return new ArrayList<>();

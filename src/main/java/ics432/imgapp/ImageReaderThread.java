@@ -1,45 +1,40 @@
 package ics432.imgapp;
 
-import javafx.scene.image.Image;
-
 import java.io.IOException;
-import java.util.concurrent.ArrayBlockingQueue;
 
-public class ImageReaderThread implements Runnable {
-
-    private final ArrayBlockingQueue<ImageUnit> inputBuffer;
-    private final ArrayBlockingQueue<ImageUnit> processBuffer;
-
-    ImageReaderThread(ArrayBlockingQueue<ImageUnit> inputBuffer, ArrayBlockingQueue<ImageUnit> buffer) {
-        this.inputBuffer = inputBuffer;
-        this.processBuffer = buffer;
-    }
+public class ImageReaderThread extends Thread {
 
     @Override
     public void run() {
-        ImageUnit imageUnit = null;
-        try {
-            imageUnit = inputBuffer.take();
-        } catch (InterruptedException ignore) {}
-        while (imageUnit != null) {
+
+        while (true) {
+
+            ImageUnit imgUnit;
             try {
-                if (!imageUnit.last) {
-                    System.err.println("Reading " + imageUnit.inputFile);
-                    long startTime = System.currentTimeMillis();
-                    imageUnit.image = new Image(imageUnit.inputFile.toUri().toURL().toString());
-                    long endTime = System.currentTimeMillis();
-                    imageUnit.jobWindow.timer.readTime += endTime - startTime;
-                }
-                try {
-                    processBuffer.put(imageUnit);
-                } catch (InterruptedException ignore) {}
-            } catch (IOException e) {
-                System.err.println("Error while reading from " + imageUnit.inputFile.toAbsolutePath() +
-                        " (" + e.getMessage() + ")");
+                imgUnit = ProducerConsumer.toRead.take();
+            } catch (InterruptedException e) {
+                continue;
             }
+
+            if ((imgUnit.inputFile != null) && (!imgUnit.job.isCanceled)) {
+
+                try {
+                    long t1 = System.currentTimeMillis();
+                    imgUnit.readInputFile();
+                    long t2 = System.currentTimeMillis();
+                    imgUnit.job.profile.readTime += (t2 - t1) / 1000F;
+                } catch (IOException e) {
+                    imgUnit.job.addOutcome(new ImgTransformOutcome(false, imgUnit.inputFile, null, e));
+                    continue;
+                }
+            }
+
             try {
-                imageUnit = inputBuffer.take();
-            } catch (InterruptedException ignore) {}
+                ProducerConsumer.toProcess.put(imgUnit);
+            } catch (InterruptedException ignore) {
+                continue;
+            }
+
         }
     }
 }

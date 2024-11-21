@@ -1,30 +1,103 @@
 package ics432.imgapp;
 
+import com.jhlabs.image.InvertFilter;
+import com.jhlabs.image.OilFilter;
+import com.jhlabs.image.SolarizeFilter;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 
+import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import static javax.imageio.ImageIO.createImageOutputStream;
+
+/**
+ * Class that implement a work unit abstraction
+ */
 public class ImageUnit {
 
-    Path inputFile;
-    Path targetDir;
-    Image image;
-    BufferedImage filteredImage;
-    String filterName;
-    double fileSize;
-    long processTime;
-    boolean last;
-    JobWindow jobWindow;
+    public static final ImageUnit theEnd = new ImageUnit(null, null, null, null);
 
-    ImageUnit(Path inputFile, Path targetDir, Image image, String filterName, double fileSize, long processTime, JobWindow jobWindow, boolean last) {
+    final public String filterName;
+    final public Path inputFile;
+    final public Path targetDir;
+    public Path outputFile;
+    public Image inputImage;
+    public BufferedImage processedImage;
+    public final Job job;
+
+    public ImageUnit(String filterName, Path inputFile, Path targetDir, Job job) {
+        this.filterName = filterName;
         this.inputFile = inputFile;
         this.targetDir = targetDir;
-        this.image = image;
-        this.filterName = filterName;
-        this.fileSize = fileSize;
-        this.processTime = processTime;
-        this.jobWindow = jobWindow;
-        this.last = last;
+        this.outputFile = null;
+        this.inputImage = null;
+        this.processedImage = null;
+        this.job = job;
     }
+
+    public void readInputFile() throws IOException {
+        // Load the image from file
+        try {
+            this.inputImage = new Image(inputFile.toUri().toURL().toString());
+            if (this.inputImage.isError()) {
+                throw new IOException("Error while reading from " + inputFile.toAbsolutePath() +
+                        " (" + this.inputImage.getException().toString() + ")");
+            }
+        } catch (IOException e) {
+            this.inputImage = null;
+            throw new IOException("Error while reading from " + inputFile.toAbsolutePath());
+        }
+    }
+
+    /**
+     * A helper method to create a Filter object
+     *
+     * @param filterName the filter's name
+     */
+    private BufferedImageOp createFilter(String filterName) {
+        switch (filterName) {
+            case "Invert":
+                return new InvertFilter();
+            case "Solarize":
+                return new SolarizeFilter();
+            case "Oil4":
+                OilFilter oil4Filter = new OilFilter();
+                oil4Filter.setRange(4);
+                return oil4Filter;
+            default:
+                throw new RuntimeException("Unknown filter " + filterName);
+        }
+    }
+
+    public void processImage() {
+        if (this.inputImage != null) {
+            BufferedImageOp filter = createFilter(this.filterName);
+            this.processedImage = filter.filter(SwingFXUtils.fromFXImage(this.inputImage, null), null);
+            this.inputImage = null; // freeing  memory
+        }
+    }
+
+    public  void writeImage() throws IOException {
+        if (this.processedImage != null) {
+            String outputPath = this.targetDir + "/" + this.filterName + "_" + this.inputFile.getFileName();
+            try {
+                this.outputFile = Paths.get(outputPath);
+                OutputStream os = new FileOutputStream(outputPath);
+                ImageOutputStream outputStream = createImageOutputStream(os);
+                ImageIO.write(this.processedImage, "jpg", outputStream);
+            } catch (IOException | NullPointerException e) {
+                throw new IOException("Error while writing to " + outputPath);
+            }
+            this.processedImage = null; // freeing memory
+        }
+    }
+
 }

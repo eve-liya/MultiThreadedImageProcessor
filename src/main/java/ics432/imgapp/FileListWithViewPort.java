@@ -14,6 +14,7 @@ import javafx.scene.layout.HBox;
 
 import java.net.MalformedURLException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -181,6 +182,17 @@ class FileListWithViewPort extends HBox {
      */
     public int getNumFiles() {
         return this.availableFiles.size();
+    }
+
+    /**
+     * Method to add one file to the list
+     *
+     * @param file : the file to add
+     */
+    public void addFile(Path file) {
+        List<Path> toAdd = new ArrayList<>();
+        toAdd.add(file);
+        this.addFiles(toAdd);
     }
 
     /**
