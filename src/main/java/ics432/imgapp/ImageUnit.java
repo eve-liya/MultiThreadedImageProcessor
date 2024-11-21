@@ -72,6 +72,8 @@ public class ImageUnit {
                 OilFilter oil4Filter = new OilFilter();
                 oil4Filter.setRange(4);
                 return oil4Filter;
+            case "MedianFilter":
+                return new MedianFilter();
             default:
                 throw new RuntimeException("Unknown filter " + filterName);
         }

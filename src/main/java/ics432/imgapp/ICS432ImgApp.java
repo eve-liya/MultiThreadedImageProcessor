@@ -32,7 +32,7 @@ public class ICS432ImgApp extends Application {
         filterNames.add("Invert");
         filterNames.add("Solarize");
         filterNames.add("Oil4");
-
+        filterNames.add("MedianFilter");
         // Statistics
         statistics = new Statistics();
     }
