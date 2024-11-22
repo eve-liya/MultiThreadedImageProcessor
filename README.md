@@ -43,3 +43,22 @@ and have to wait for the long process to finish before moving on to the next ima
 # Assignment 8
 The 3 threads are created in the Main Window class. They are created there and set to Daemon threads so the app can close even if they are still running. The producer consumer using the Array blocking queue is also set up in the MainWindow class. There are 3 buffers, one which starts the chain which the reader consumes from, one which the reader produces to and the processor consumes from, and one that the processor produces to and the writer consumes from. When a job is started, it will get a reference to the first input buffer and load all the files in there. Then the readers,processors, and writers can start. 
 
+# Assignment 9
+
+The data decomposition scheme I chose was to simply split the image into columns.
+Each thread will process all the pixels in their respective column. This is defined as height(img) * width(img)/numThreads.
+
+01 thread      1.00x : 16.82 seconds 
+02 threads     2.04x : 8.26 seconds
+04 threads     3.48x : 4.84 seconds
+08 threads     3.95x : 4.26 seconds
+
+I'm pretty happy with my results. When I ran the regular median filter before it took quite a while for to process all the images.
+And it sped it up by almost 4 times. 
+
+1 process 1 DP : 502.69 seconds
+1 process 8 DP : 130.83 seconds 
+2 process 8/2 DP : 129.75 seconds
+4 process 2 DP : 130.73
+
+
