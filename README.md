@@ -54,11 +54,18 @@ Each thread will process all the pixels in their respective column. This is defi
 08 threads     3.95x : 4.26 seconds
 
 I'm pretty happy with my results. When I ran the regular median filter before it took quite a while for to process all the images.
-And it sped it up by almost 4 times. 
+And it sped it up by almost 4 times. We did see limited gains when going from 4 - 8 threads however.  
+
+I'm wondering if since my CPU has 4 physical cores but with hyperthreading I can have up to 8 hyperthreads so when I go above
+my number of physical cores then the benefits would be less since it won't be true concurrency?
 
 1 process 1 DP : 502.69 seconds
 1 process 8 DP : 130.83 seconds 
 2 process 8/2 DP : 129.75 seconds
 4 process 2 DP : 130.73
+8 process 1 DP : 135.23
 
+It seems like it is better to do a combination of both task and data parallism. 
+However, we should maintain a balance, I tried also doing N threads and N DP threads and I had some issues with 
+my computer slowing down and taking too much resources. 
 
