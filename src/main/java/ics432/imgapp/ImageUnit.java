@@ -74,6 +74,8 @@ public class ImageUnit {
                 return oil4Filter;
             case "MedianFilter":
                 return new MedianFilter();
+            case "DPMedianFilter":
+                return new DPMedianFilter();
             default:
                 throw new RuntimeException("Unknown filter " + filterName);
         }

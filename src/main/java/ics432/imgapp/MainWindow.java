@@ -11,9 +11,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
-
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +31,7 @@ class MainWindow {
     private StatisticsWindow statisticsWindow;
     private int jobID = 0;
     private final Slider threadsSlider;
+    private final Slider parallelSlider;
 
 
 
@@ -72,6 +70,13 @@ class MainWindow {
         this.threadsSlider.setShowTickLabels(true);
         this.threadsSlider.setSnapToTicks(true);
 
+        this.parallelSlider = new Slider(1, Runtime.getRuntime().availableProcessors(), 1);
+        this.parallelSlider.setPrefWidth(300);
+        this.parallelSlider.setBlockIncrement(1);
+        this.parallelSlider.setMajorTickUnit(1);
+        this.parallelSlider.setMinorTickCount(0);
+        this.parallelSlider.setShowTickLabels(true);
+        this.parallelSlider.setSnapToTicks(true);
         quitButton = new Button("Quit");
         quitButton.setPrefHeight(buttonPreferredHeight);
 
@@ -96,6 +101,7 @@ class MainWindow {
         createJobButton.setOnAction(e -> {
             this.quitButton.setDisable(true);
             this.threadsSlider.setDisable(true);
+            this.parallelSlider.setDisable(true);
             this.pendingJobCount += 1;
             this.jobID += 1;
             JobWindow jw = new JobWindow(
@@ -110,12 +116,13 @@ class MainWindow {
                 if (this.pendingJobCount == 0) {
                     this.quitButton.setDisable(false);
                     this.threadsSlider.setDisable(false);
+                    this.parallelSlider.setDisable(false);
                 }
             });
         });
 
         this.threadsSlider.valueProperty().addListener((observableValue, oldvalue, newvalue) -> ProducerConsumer.setNumberProcessorThreads(newvalue.intValue()));
-
+        this.parallelSlider.valueProperty().addListener((observableValue, oldvalue, newvalue) -> DPMedianFilter.setNumThreads(newvalue.intValue()));
 
         viewStatsButton.setOnAction(e -> {
 
@@ -142,7 +149,9 @@ class MainWindow {
         topRow.getChildren().add(new Label("#threads"));
         topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
         topRow.getChildren().add(this.threadsSlider);
+        topRow.getChildren().add(new Label("#Median Threads"));
         topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
+        topRow.getChildren().add(this.parallelSlider);
         layout.getChildren().add(topRow);
 
         layout.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
@@ -158,7 +167,7 @@ class MainWindow {
         this.primaryStage.setScene(scene);
         this.primaryStage.setResizable(false);
 
-        // Make this primaryStage non closable
+        // Make this primaryStage non-closable
         this.primaryStage.setOnCloseRequest(Event::consume);
 
         //  Show it on  screen.

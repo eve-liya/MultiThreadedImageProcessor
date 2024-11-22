@@ -33,6 +33,7 @@ public class ICS432ImgApp extends Application {
         filterNames.add("Solarize");
         filterNames.add("Oil4");
         filterNames.add("MedianFilter");
+        filterNames.add("DPMedianFilter");
         // Statistics
         statistics = new Statistics();
     }
