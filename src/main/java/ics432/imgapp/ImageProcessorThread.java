@@ -27,9 +27,10 @@ public class ImageProcessorThread extends Thread {
                 }
             }
 
+
             if (this.isCancelled) return;
 
-            if ((imgUnit.inputImage != null) && (!imgUnit.job.isCanceled)) {
+            if ((!imgUnit.last) && (!imgUnit.job.isCanceled)) {
                 long t1 = System.currentTimeMillis();
                 imgUnit.processImage();
                 long t2 = System.currentTimeMillis();

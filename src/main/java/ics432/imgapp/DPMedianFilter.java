@@ -72,16 +72,18 @@ public class DPMedianFilter implements BufferedImageOp {
     @Override
     public BufferedImage filter(BufferedImage src, BufferedImage dest) {
         System.err.println("Source img: height: " + src.getHeight() + ", width: " + src.getWidth());
-        int width = src.getWidth() / numThreads;
-        int height = src.getHeight();
+        int width = src.getWidth();
+        int height = src.getHeight() / numThreads;
 
         // Create output image
         dest = new BufferedImage(src.getWidth(), src.getHeight(), src.getType());
         Thread[] medianThreads = new Thread[numThreads];
-        for (int t = 0; t < numThreads; t++) {
-            medianThreads[t] = new Thread(new MedianThread(src, dest, height, width, width * t, t));
+
+        for (int t = 0; t < numThreads - 1; t++) {
+            medianThreads[t] = new Thread(new MedianThread(src, dest, height, width, height * t, t));
             medianThreads[t].start();
         }
+        medianThreads[numThreads - 1] = new Thread(new MedianThread(src, dest, height, width, height + src.getHeight() % numThreads, numThreads));
         for (int t = 0; t < numThreads; t++) {
             try {
                 medianThreads[t].join();
@@ -132,12 +134,11 @@ public class DPMedianFilter implements BufferedImageOp {
             this.width = width;
             this.initial = initial;
             this.id = id;
-            System.out.println("Thread # height: " + height + " width: " + width + "initial" + initial);
         }
         @Override
         public void run() {
-            for (int i=0; i < height; i++) {
-                for (int j=initial; j < width * (id + 1); j++) {
+            for (int i=initial; i < height * (id + 1); i++) {
+                for (int j=0; j < width; j++) {
                     dest.setRGB(j,i,processPixel(src,j,i));
                 }
             }

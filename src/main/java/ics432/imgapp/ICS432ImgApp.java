@@ -34,6 +34,9 @@ public class ICS432ImgApp extends Application {
         filterNames.add("Oil4");
         filterNames.add("MedianFilter");
         filterNames.add("DPMedianFilter");
+        filterNames.add("DPEdge");
+        filterNames.add("DPFunk1");
+        filterNames.add("DPFunk2");
         // Statistics
         statistics = new Statistics();
     }

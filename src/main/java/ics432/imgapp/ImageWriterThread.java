@@ -16,7 +16,7 @@ public class ImageWriterThread extends Thread {
                 continue;
             }
 
-            if ((imgUnit.processedImage != null) && (!imgUnit.job.isCanceled)) {
+            if ((!imgUnit.last) && (!imgUnit.job.isCanceled)) {
 
                 ImgTransformOutcome outcome;
                 try {

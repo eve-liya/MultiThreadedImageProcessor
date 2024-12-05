@@ -23,7 +23,7 @@ import static javax.imageio.ImageIO.createImageOutputStream;
  */
 public class ImageUnit {
 
-    public static final ImageUnit theEnd = new ImageUnit(null, null, null, null);
+    public static final ImageUnit theEnd = new ImageUnit(null, null, null, null, true);
 
     final public String filterName;
     final public Path inputFile;
@@ -32,8 +32,9 @@ public class ImageUnit {
     public Image inputImage;
     public BufferedImage processedImage;
     public final Job job;
+    public final boolean last;
 
-    public ImageUnit(String filterName, Path inputFile, Path targetDir, Job job) {
+    public ImageUnit(String filterName, Path inputFile, Path targetDir, Job job, boolean last) {
         this.filterName = filterName;
         this.inputFile = inputFile;
         this.targetDir = targetDir;
@@ -41,6 +42,7 @@ public class ImageUnit {
         this.inputImage = null;
         this.processedImage = null;
         this.job = job;
+        this.last = last;
     }
 
     public void readInputFile() throws IOException {

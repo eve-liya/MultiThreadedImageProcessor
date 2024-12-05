@@ -110,9 +110,17 @@ public  class Job {
 
         // Populate the toRead buffer
         try {
-            for (Path inputFile : this.inputFiles) {
-                ImageUnit imgUnit = new ImageUnit(this.filterName, inputFile, targetDir, this);
-                ProducerConsumer.toRead.put(imgUnit);
+            // TODO what the hell is this
+            if (filterName.equals("DPEdge") || filterName.equals("DPFunk1") || filterName.equals("DPFunk2")) {
+                for (Path inputFile : this.inputFiles) {
+                    ImageUnit imgUnit = new ImageUnitExternal(this.filterName, inputFile, targetDir, this, false);
+                    ProducerConsumer.toRead.put(imgUnit);
+                }
+            } else {
+                for (Path inputFile : this.inputFiles) {
+                    ImageUnit imgUnit = new ImageUnit(this.filterName, inputFile, targetDir, this, false);
+                    ProducerConsumer.toRead.put(imgUnit);
+                }
             }
             // Put a "the end" work unit to signal the end of computing
             ProducerConsumer.toRead.put(ImageUnit.theEnd);

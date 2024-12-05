@@ -16,7 +16,7 @@ public class ImageReaderThread extends Thread {
                 continue;
             }
 
-            if ((imgUnit.inputFile != null) && (!imgUnit.job.isCanceled)) {
+            if ((!imgUnit.last) && (!imgUnit.job.isCanceled)) {
 
                 try {
                     long t1 = System.currentTimeMillis();
