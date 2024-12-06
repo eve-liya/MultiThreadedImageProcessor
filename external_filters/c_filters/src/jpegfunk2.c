@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <jpeglib.h>
+#include <sys/time.h>
 
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
@@ -201,14 +202,25 @@ unsigned char compute_pixel_value(struct rgb_image *input_image, int row, int co
  */
 void apply_filter(struct rgb_image *input_image, struct rgb_image *output_image) {
     int row, col, rgb;
-
-    for (row = 0; row < input_image->height; row++) {
-        for (col = 0; col < input_image->width; col++) {
-            for (rgb = 0; rgb < 3; rgb++) {
-                output_image->RGB[rgb][row * input_image->width + col] =
-                        compute_pixel_value(input_image, row, col, rgb);
+    struct timeval start,end;
+    int chunk = input_image->width / omp_get_num_threads();
+    #pragma omp parallel shared(input_image) private(row, col, rgb, start, end)
+    {
+        gettimeofday(&start, NULL);
+        #pragma omp for nowait schedule(dynamic, 25) collapse(3)
+        for (row = 0; row < input_image->height; row++) {
+            for (col = 0; col < input_image->width; col++) {
+                for (rgb = 0; rgb < 3; rgb++) {
+                // Pointer math for 2d array access
+                    output_image->RGB[rgb][row * input_image->width + col] =
+                            compute_pixel_value(input_image, row, col, rgb);
+                }
             }
         }
+        gettimeofday(&end, NULL);
+        printf("Therereead %d elapsed: %.2lf\n",omp_get_thread_num(),
+               ((1000000.0 * (end.tv_sec - start.tv_sec) +
+               (1.0 * (end.tv_usec - start.tv_usec)))/1000000.0));
     }
 }
 
@@ -216,11 +228,12 @@ void apply_filter(struct rgb_image *input_image, struct rgb_image *output_image)
 int main(int argc, char **argv) {
 
     /** Parse Command-Line Arguments **/
-    if (argc != 3) {
+    if (argc != 4) {
         fprintf(stderr, "Usage: %s <input jpg file path> <output jpg file path>\n", argv[0]);
         exit(1);
     }
 
+    omp_set_num_threads(atoi(argv[3]));
     /** Read Input Image into RAM **/
     struct rgb_image *input_image = read_input_image(argv[1]);
 
