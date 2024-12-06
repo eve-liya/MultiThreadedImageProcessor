@@ -13,6 +13,11 @@ import java.util.List;
 
 public class ImageUnitExternal extends ImageUnit {
 
+    private static int numThreadsExternal;
+
+    public static void setNumThreads(int threads) {
+        ImageUnitExternal.numThreadsExternal = threads;
+    }
     public ImageUnitExternal(String filterName, Path inputFile, Path targetDir, Job job, boolean last) {
         super(filterName, inputFile, targetDir, job, last);
     }
@@ -50,6 +55,7 @@ public class ImageUnitExternal extends ImageUnit {
         }
         args.add("/input/" + inputFile.getFileName());
         args.add("/output/" + this.filterName + "_" + this.inputFile.getFileName());
+        args.add(numThreadsExternal + "");
 
         ProcessBuilder pb = new ProcessBuilder(args);
         try {

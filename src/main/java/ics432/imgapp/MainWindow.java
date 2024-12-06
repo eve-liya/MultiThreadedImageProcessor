@@ -122,7 +122,10 @@ class MainWindow {
         });
 
         this.threadsSlider.valueProperty().addListener((observableValue, oldvalue, newvalue) -> ProducerConsumer.setNumberProcessorThreads(newvalue.intValue()));
-        this.parallelSlider.valueProperty().addListener((observableValue, oldvalue, newvalue) -> DPMedianFilter.setNumThreads(newvalue.intValue()));
+        this.parallelSlider.valueProperty().addListener((observableValue, oldvalue, newvalue) -> {
+            DPMedianFilter.setNumThreads(newvalue.intValue());
+            ImageUnitExternal.setNumThreads(newvalue.intValue());
+        });
 
         viewStatsButton.setOnAction(e -> {
 

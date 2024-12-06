@@ -3,6 +3,7 @@
 #include <jpeglib.h>
 #include <setjmp.h>
 #include <math.h>
+#include <omp.h>
 
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
@@ -188,24 +189,29 @@ unsigned char compute_pixel_value(struct rgb_image *input_image, int row, int co
 void apply_filter(struct rgb_image *input_image, struct rgb_image *output_image) {
     int row, col, rgb;
 
-    for (row = 0; row < input_image->height; row++) {
-        for (col = 0; col < input_image->width; col++) {
-            for (rgb=0; rgb < 3; rgb++) {
-                output_image->RGB[rgb][row * input_image->width + col] =
-                        compute_pixel_value(input_image, row, col, rgb);
+    #pragma omp parallel shared(input_image) private(row, col, rgb)
+    {
+        #pragma omp for
+        for (row = 0; row < input_image->height; row++) {
+            for (col = 0; col < input_image->width; col++) {
+                for (rgb=0; rgb < 3; rgb++) {
+                    output_image->RGB[rgb][row * input_image->width + col] =
+                            compute_pixel_value(input_image, row, col, rgb);
+                }
             }
         }
     }
+
 }
 
 int main(int argc, char **argv) {
 
     /** Parse Command-Line Arguments **/
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <input jpg file path> <output jpg file path>\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s <input jpg file path> <output jpg file path> <num threads>\n", argv[0]);
         exit(1);
     }
-
+    omp_set_num_threads(atoi(argv[3]));
     /** Read Input Image into RAM **/
     struct rgb_image *input_image = read_input_image(argv[1]);
 
