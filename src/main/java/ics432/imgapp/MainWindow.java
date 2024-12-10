@@ -149,10 +149,10 @@ class MainWindow {
         topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
         topRow.getChildren().add(viewStatsButton);
         topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
-        topRow.getChildren().add(new Label("#threads"));
+        topRow.getChildren().add(new Label("#Processor threads"));
         topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
         topRow.getChildren().add(this.threadsSlider);
-        topRow.getChildren().add(new Label("#Median Threads"));
+        topRow.getChildren().add(new Label("#Filter Threads"));
         topRow.getChildren().add(Util.createSeparator(0, 5, Orientation.VERTICAL));
         topRow.getChildren().add(this.parallelSlider);
         layout.getChildren().add(topRow);
