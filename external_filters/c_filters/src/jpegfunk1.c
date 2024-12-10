@@ -217,7 +217,7 @@ void apply_filter(struct rgb_image *input_image, struct rgb_image *output_image)
             }
         }
         gettimeofday(&end, NULL);
-        printf("Theread %d elapsed: %.2lf\n",omp_get_thread_num(),
+        printf("Thread %d elapsed: %.2lf\n",omp_get_thread_num(),
                ((1000000.0 * (end.tv_sec - start.tv_sec) +
                (1.0 * (end.tv_usec - start.tv_usec)))/1000000.0));
     }
