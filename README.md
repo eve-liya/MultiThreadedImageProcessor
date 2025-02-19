@@ -1,18 +1,19 @@
-# ics432imgapp
-
 This is a simple Java/JavaFX Application with which users can apply filters
-to batches of image (jpg) files, and which serves as a basis for
-all ICS432 programming assignments. 
+to batches of image (jpg) files, adapted from ICS 432: Concurrent Programming assignments.
+
+Filter jobs can be submitted, run concurrently, and can be configured to run on multiple threads.
+
+Jobs are processed in a Producer Consumer fashion to prevent race conditions.
+
+The `external_filters` directory contains additional image filters, implemented in C and processes images in parallel, docker is used to run the C code from the java app.
 
 The application is structured as a Maven project, with all source code in the 
 `src/` directory and the Maven configuration in the `pom.xml` file.
 
-The `external_filters` directory contains additional image filters, not necessarily implemented in Java, 
-which will be relevant for later programming assignment. See `README` file within for details.
 
 ---
 
-# Assignment 4
+## Statistics window
 The statistics window, encapsulates the statistics of each job that is run including the total number of executed jobs, since the application was started The total number of successfully processed images in total, since the application was started and the average compute speed (total MB of input divided by total execution time in seconds, computed when a job completes) for each filter since the application was started (0 if the filter has not been used yet).
 
 The statistics window has two variables, totalJobs and totalImages. These are to keep track of the total number of jobs and images processed since the application was started. Since these are shared variables and multiple jobs can update these at once, the only way they should be changed is through the incrementTotalJobs and incrementTotalImages methods. The increment in each method is done in a synchronized block to ensure that only one thread can update the variables at a time. This prevents race conditions and lost updates to the variables.
@@ -21,7 +22,7 @@ For each filter there is also additional statistics kept. It has the total size 
 
 ---
 
-# Assignment 6
+# Producer Consumer queues
 The largest possible value for the buffer sizes for the producer consumer buffer I was able to run without getting an out of memory exception was 2.
 
 ## Acceleration factors
@@ -46,12 +47,12 @@ and have to wait for the long process to finish before moving on to the next ima
 
 ---
 
-# Assignment 8
+# Daemon threads
 The 3 threads are created in the Main Window class. They are created there and set to Daemon threads so the app can close even if they are still running. The producer consumer using the Array blocking queue is also set up in the MainWindow class. There are 3 buffers, one which starts the chain which the reader consumes from, one which the reader produces to and the processor consumes from, and one that the processor produces to and the writer consumes from. When a job is started, it will get a reference to the first input buffer and load all the files in there. Then the readers,processors, and writers can start. 
 
 ---
 
-# Assignment 9
+# Data decomposition
 
 The data decomposition scheme I chose was to simply split the image into columns.
 Each thread will process all the pixels in their respective column. This is defined as height(img) * width(img)/numThreads.
@@ -79,9 +80,7 @@ my computer slowing down and taking too much resources.
 
 ---
 
-# Assignment 10
-
-## JPEGEDGE
+# JPEGEDGE
 
 ### Performance Data
 | Threads | Execution Time (s) | Speedup | Parallel Efficiency |
@@ -189,8 +188,3 @@ my computer slowing down and taking too much resources.
 | 0      | 35.39            |
 | 3      | 35.40            |
 | 6      | 35.40            |
-
-
-
-
-
