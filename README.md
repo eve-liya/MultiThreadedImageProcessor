@@ -1,15 +1,17 @@
-This is a simple Java/JavaFX Application with which users can apply filters
-to batches of image (jpg) files, adapted from ICS 432: Concurrent Programming assignments.
-
+This is a simple Java/JavaFX application that allows users to apply filters to batches of image (.jpg) files. The application is adapted from assignments in ICS 432: Concurrent Programming.
 Filter jobs can be submitted, run concurrently, and can be configured to run on multiple threads.
 
-Jobs are processed in a Producer Consumer fashion to prevent race conditions.
-
-The `external_filters` directory contains additional image filters, implemented in C and processes images in parallel, docker is used to run the C code from the java app.
+## Features
+- Supports batch processing of images.
+- Demanding external filters are implemented in C and executed in parallel for high performance.
+- Configurable multi-threaded processing.
+- The application is fully multithreaded, ensuring that the GUI remains responsive while processing occurs in the background.
+- Multiple image filtering batch jobs can be executed concurrently.
+- Within each batch job, multiple images are filtered simultaneously.
+- Uses a Producer-Consumer pattern to prevent race conditions and efficiently manage workload distribution.
 
 The application is structured as a Maven project, with all source code in the 
 `src/` directory and the Maven configuration in the `pom.xml` file.
-
 
 ---
 
